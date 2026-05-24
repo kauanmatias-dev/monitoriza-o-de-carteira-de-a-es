@@ -1,6 +1,15 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { appConfig } from './app/app.config';
-import { App } from './app/app';
+import { AppComponent } from './app/app.component';
+import { provideHttpClient } from '@angular/common/http';
+import { LOCALE_ID } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localePt from '@angular/common/locales/pt-PT';
 
-bootstrapApplication(App, appConfig)
-  .catch((err) => console.error(err));
+registerLocaleData(localePt);
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideHttpClient(),
+    { provide: LOCALE_ID, useValue: 'pt-PT' }
+  ]
+});

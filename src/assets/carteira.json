@@ -1,0 +1,7 @@
+[
+  { "ticker": "MSFT",  "empresa": "Microsoft", "dataCompra": "2026-03-01", "quantidade": 20, "precoUnitario": 390.00 },
+  { "ticker": "TSLA",  "empresa": "Tesla",      "dataCompra": "2026-03-20", "quantidade": 50, "precoUnitario": 280.00 },
+  { "ticker": "AAPL",  "empresa": "Apple",      "dataCompra": "2026-02-15", "quantidade": 30, "precoUnitario": 220.00 },
+  { "ticker": "GOOGL", "empresa": "Alphabet",   "dataCompra": "2026-01-10", "quantidade": 10, "precoUnitario": 190.00 },
+  { "ticker": "AMZN",  "empresa": "Amazon",     "dataCompra": "2026-02-28", "quantidade": 15, "precoUnitario": 220.00 }
+]

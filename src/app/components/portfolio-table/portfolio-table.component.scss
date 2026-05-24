@@ -1,0 +1,429 @@
+// ============================================================
+// portfolio-table.component.scss
+// Design financeiro premium — tema escuro com acentos verde/vermelho
+// Inspirado em plataformas como Bloomberg Terminal e Degiro
+// ============================================================
+
+// ── Variáveis de Design ──────────────────────────────────────
+$color-bg-dark: #0d1117;
+$color-bg-card: #161b22;
+$color-bg-card-hover: #1c2128;
+$color-border: #30363d;
+$color-text-primary: #e6edf3;
+$color-text-secondary: #8b949e;
+$color-text-muted: #484f58;
+
+// Cores de variação (standard financeiro internacional)
+$color-positive: #3fb950;       // Verde: ganho
+$color-negative: #f85149;       // Vermelho: perda
+$color-neutral: #e6edf3;        // Branco: neutro
+$color-positive-bg: rgba(63, 185, 80, 0.1);
+$color-negative-bg: rgba(248, 81, 73, 0.1);
+
+// Acentos
+$color-accent: #388bfd;          // Azul Bloomberg
+$color-accent-glow: rgba(56, 139, 253, 0.15);
+
+// ── Wrapper Principal ────────────────────────────────────────
+.portfolio-wrapper {
+  background: $color-bg-dark;
+  border-radius: 12px;
+  border: 1px solid $color-border;
+  overflow: hidden;
+  font-family: 'IBM Plex Mono', 'Fira Code', 'Courier New', monospace;
+
+  // Efeito de gradiente subtil no topo
+  &::before {
+    content: '';
+    display: block;
+    height: 3px;
+    background: linear-gradient(90deg, $color-accent, $color-positive, $color-negative);
+  }
+}
+
+// ── Cabeçalho da Secção ──────────────────────────────────────
+.portfolio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid $color-border;
+  background: $color-bg-card;
+}
+
+.portfolio-title {
+  color: $color-text-primary;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.02em;
+
+  .title-icon {
+    margin-right: 8px;
+  }
+}
+
+.last-update {
+  display: block;
+  color: $color-text-muted;
+  font-size: 0.7rem;
+  margin-top: 2px;
+  font-family: monospace;
+}
+
+// ── Botão de Atualização ─────────────────────────────────────
+.btn-refresh {
+  background: transparent;
+  border: 1px solid $color-border;
+  color: $color-text-secondary;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+
+  .btn-icon { margin-right: 6px; }
+
+  &:hover:not(:disabled) {
+    background: $color-accent-glow;
+    border-color: $color-accent;
+    color: $color-accent;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ── Loading Overlay ──────────────────────────────────────────
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: $color-text-secondary;
+
+  .loading-text {
+    margin-top: 16px;
+    font-size: 0.9rem;
+  }
+
+  .spinner-border {
+    color: $color-accent !important;
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+// ── Alert de Erro ────────────────────────────────────────────
+.alert-custom {
+  margin: 16px 24px;
+  border-radius: 8px;
+  background: rgba(248, 81, 73, 0.1);
+  border-color: $color-negative;
+  color: $color-negative;
+  font-size: 0.9rem;
+}
+
+// ── Tabela Principal ─────────────────────────────────────────
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  // Scrollbar estilizada (WebKit)
+  &::-webkit-scrollbar { height: 6px; }
+  &::-webkit-scrollbar-track { background: $color-bg-dark; }
+  &::-webkit-scrollbar-thumb {
+    background: $color-border;
+    border-radius: 3px;
+  }
+}
+
+.portfolio-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  color: $color-text-primary;
+  margin: 0;
+
+  // ── Cabeçalho ───────────────────────────────────────────────
+  thead tr {
+    background: $color-bg-card;
+    border-bottom: 2px solid $color-border;
+  }
+
+  thead th {
+    padding: 12px 16px;
+    color: $color-text-muted;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    border: none;
+    background: transparent;
+    user-select: none;
+
+    &.th-sortable {
+      cursor: pointer;
+      transition: color 0.15s ease;
+
+      &:hover {
+        color: $color-text-primary;
+      }
+    }
+
+    &.th-number {
+      text-align: right;
+    }
+
+    .sort-icon {
+      opacity: 0.5;
+      font-size: 0.7rem;
+      margin-left: 4px;
+    }
+  }
+
+  // ── Linhas do Corpo ─────────────────────────────────────────
+  tbody tr.portfolio-row {
+    border-bottom: 1px solid rgba($color-border, 0.5);
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: $color-bg-card-hover;
+    }
+
+    &.row-loading {
+      opacity: 0.7;
+    }
+
+    &.row-error td {
+      opacity: 0.6;
+    }
+  }
+
+  tbody td {
+    padding: 12px 16px;
+    vertical-align: middle;
+    border: none;
+    background: transparent;
+  }
+
+  // ── Células Específicas ──────────────────────────────────────
+ .td-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  white-space: nowrap;
+}
+
+  .td-ticker .ticker-badge {
+    display: inline-block;
+    background: $color-accent-glow;
+    border: 1px solid rgba($color-accent, 0.3);
+    color: $color-accent;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .td-empresa {
+    font-weight: 500;
+    color: $color-text-secondary;
+  }
+
+  .td-data {
+    color: $color-text-muted;
+    font-size: 0.8rem;
+  }
+
+  .td-total-aquisicao {
+  color: $color-text-secondary;
+}
+
+  .td-cotacao {
+    color: $color-text-primary;
+    font-weight: 500;
+  }
+
+  .td-valor-atual {
+    color: $color-text-primary;
+    font-weight: 600;
+  }
+
+  // ── Linha de Totais (rodapé) ────────────────────────────────
+  tfoot tr.totals-row {
+    background: $color-bg-card;
+    border-top: 2px solid $color-border;
+
+    td {
+      padding: 16px 16px;
+    }
+
+    .totals-label {
+      color: $color-text-primary;
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .totals-value {
+      font-size: 0.95rem;
+    }
+  }
+}
+
+// ── Badges de Variação ───────────────────────────────────────
+// Aplicados via [ngClass] com getVariacaoClass()
+.variacao-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+
+  &.variacao-badge-lg {
+    font-size: 0.95rem;
+    padding: 4px 12px;
+  }
+}
+
+// 🟢 Verde: variação positiva
+.variacao-positive {
+  color: $color-positive !important;
+  background: $color-positive-bg !important;
+
+  &.variacao-badge {
+    border: 1px solid rgba($color-positive, 0.3);
+  }
+}
+
+// 🔴 Vermelho: variação negativa
+.variacao-negative {
+  color: $color-negative !important;
+  background: $color-negative-bg !important;
+
+  &.variacao-badge {
+    border: 1px solid rgba($color-negative, 0.3);
+  }
+}
+
+// ⚫ Neutro: variação zero ou dados indisponíveis
+.variacao-neutral {
+  color: $color-text-muted !important;
+  background: rgba($color-text-muted, 0.08) !important;
+
+  &.variacao-badge {
+    border: 1px solid rgba($color-text-muted, 0.2);
+  }
+}
+
+// ── Cards de Resumo ──────────────────────────────────────────
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  border-top: 1px solid $color-border;
+  background: $color-border; // Cria efeito de separador entre cards
+}
+
+.summary-card {
+  background: $color-bg-card;
+  padding: 20px 24px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: $color-bg-card-hover;
+  }
+
+  .card-label {
+    color: $color-text-muted;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .card-value {
+    color: $color-text-primary;
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+
+    &.card-value-variacao {
+      font-size: 1.4rem;
+    }
+  }
+
+  // Aplica as classes de cor aos cards também
+  &.variacao-positive .card-value { color: $color-positive; }
+  &.variacao-negative .card-value { color: $color-negative; }
+}
+
+// ── Nota de Atualização Automática ───────────────────────────
+.auto-update-note {
+  padding: 10px 24px;
+  border-top: 1px solid $color-border;
+  background: $color-bg-card;
+  color: $color-text-muted;
+  font-size: 0.72rem;
+  text-align: right;
+}
+
+// ── Spinner Pequeno ──────────────────────────────────────────
+.spinner-sm {
+  display: inline-flex;
+  align-items: center;
+
+  .spinner-border-sm {
+    border-color: $color-text-muted;
+    border-right-color: transparent;
+  }
+}
+
+// ── Responsividade ───────────────────────────────────────────
+@media (max-width: 768px) {
+  .portfolio-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .portfolio-table {
+    font-size: 0.8rem;
+
+    thead th,
+    tbody td {
+      padding: 10px 10px;
+    }
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+}
+tbody td {
+  color: #e6edf3 !important;
+}
+
+tfoot tr.totals-row td {
+  color: #161b22 !important;
+}

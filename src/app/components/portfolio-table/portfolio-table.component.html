@@ -1,0 +1,250 @@
+<!-- ============================================================
+  portfolio-table.component.html
+  Template da tabela de monitorização de carteira de ações
+  Demonstra: *ngFor, *ngIf, [ngClass], pipes, event binding
+  ============================================================ -->
+
+<div class="portfolio-wrapper">
+
+  <!-- ── CABEÇALHO DA SECÇÃO ─────────────────────────────────── -->
+  <div class="portfolio-header">
+    <div class="header-left">
+      <h2 class="portfolio-title">
+        <span class="title-icon">📈</span>
+        Carteira de Ações
+      </h2>
+      <!-- Última atualização: exibida quando há dados -->
+      <span class="last-update" *ngIf="lastUpdate">
+        Atualizado às {{ lastUpdate | date:'HH:mm:ss' }}
+      </span>
+    </div>
+
+    <div class="header-right">
+      <!-- Botão de atualização manual das cotações -->
+      <button
+        class="btn btn-refresh"
+        (click)="atualizarCotacoes()"
+        [disabled]="isLoading"
+        title="Atualizar cotações agora">
+        <span class="btn-icon">🔄</span>
+        Atualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- ── ESTADO: CARREGAMENTO INICIAL ───────────────────────── -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">A carregar...</span>
+    </div>
+    <p class="loading-text">A carregar carteira...</p>
+  </div>
+
+  <!-- ── ESTADO: ERRO GLOBAL ────────────────────────────────── -->
+  <div class="alert alert-danger alert-custom" *ngIf="errorMessage && !isLoading" role="alert">
+    <span>⚠️ {{ errorMessage }}</span>
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+
+  <!-- ── TABELA PRINCIPAL ───────────────────────────────────── -->
+  <div class="table-responsive" *ngIf="!isLoading">
+    <table class="table portfolio-table">
+
+      <!-- CABEÇALHO DA TABELA com ordenação clicável -->
+      <thead>
+        <tr>
+          <!-- Cada th tem (click) para ordenar e exibe o ícone de sort -->
+          <th (click)="ordenarPor('ticker')" class="th-sortable">
+            Ticker <span class="sort-icon">{{ getSortIcon('ticker') }}</span>
+          </th>
+          <th (click)="ordenarPor('empresa')" class="th-sortable">
+            Empresa <span class="sort-icon">{{ getSortIcon('empresa') }}</span>
+          </th>
+          <th (click)="ordenarPor('dataCompra')" class="th-sortable">
+            Data Compra <span class="sort-icon">{{ getSortIcon('dataCompra') }}</span>
+          </th>
+          <th (click)="ordenarPor('quantidade')" class="th-sortable th-number">
+            QT <span class="sort-icon">{{ getSortIcon('quantidade') }}</span>
+          </th>
+          <th (click)="ordenarPor('precoUnitario')" class="th-sortable th-number">
+            PU (€) <span class="sort-icon">{{ getSortIcon('precoUnitario') }}</span>
+          </th>
+          <th (click)="ordenarPor('totalAquisicao')" class="th-sortable th-number">
+            Total Aquisição (€) <span class="sort-icon">{{ getSortIcon('totalAquisicao') }}</span>
+          </th>
+          <th (click)="ordenarPor('cotacaoAtual')" class="th-sortable th-number">
+            Cotação Dia (€) <span class="sort-icon">{{ getSortIcon('cotacaoAtual') }}</span>
+          </th>
+          <th (click)="ordenarPor('valorAtual')" class="th-sortable th-number">
+            Valor Atual (€) <span class="sort-icon">{{ getSortIcon('valorAtual') }}</span>
+          </th>
+          <th (click)="ordenarPor('variacao')" class="th-sortable th-number">
+            Variação (%) <span class="sort-icon">{{ getSortIcon('variacao') }}</span>
+          </th>
+        </tr>
+      </thead>
+
+      <!-- CORPO DA TABELA -->
+      <tbody>
+        <!--
+          *ngFor com trackBy para performance otimizada.
+          trackByTicker evita re-renderização de linhas não alteradas.
+        -->
+        <tr *ngFor="let row of rows; trackBy: trackByTicker"
+            class="portfolio-row"
+            [class.row-loading]="row.isLoading"
+            [class.row-error]="row.hasError">
+
+          <!-- Ticker com badge -->
+          <td class="td-ticker">
+            <span class="ticker-badge">{{ row.ticker }}</span>
+          </td>
+
+          <!-- Nome da empresa -->
+          <td class="td-empresa">{{ row.empresa }}</td>
+
+          <!-- Data de compra formatada com pipe date do Angular -->
+          <td class="td-data">
+            {{ row.dataCompra | date:'dd/MM/yyyy':'UTC' }}
+          </td>
+
+          <!-- Quantidade formatada com pipe number -->
+          <td class="td-number">
+            {{ row.quantidade | number:'1.0-0':'pt-PT' }}
+          </td>
+
+          <!-- Preço Unitário de compra -->
+          <td class="td-number">
+            {{ row.precoUnitario | number:'1.2-2':'pt-PT' }}
+          </td>
+
+          <!-- Total Aquisição = QT × PU (calculado no componente) -->
+          <td class="td-number td-total-aquisicao">
+            {{ row.totalAquisicao | number:'1.2-2':'pt-PT' }}
+          </td>
+
+          <!-- Cotação do Dia: spinner enquanto carrega, valor ou erro -->
+          <td class="td-number td-cotacao">
+            <!-- Estado: a carregar -->
+            <span class="spinner-sm" *ngIf="row.isLoading">
+              <span class="spinner-border spinner-border-sm" role="status"></span>
+            </span>
+            <!-- Estado: erro -->
+            <span class="text-danger" *ngIf="row.hasError && !row.isLoading" title="Não foi possível obter cotação">
+              N/D
+            </span>
+            <!-- Estado: valor disponível -->
+            <span *ngIf="!row.isLoading && !row.hasError && row.cotacaoAtual !== null">
+              {{ row.cotacaoAtual | number:'1.2-2':'pt-PT' }}
+            </span>
+          </td>
+
+          <!-- Valor Atual = QT × Cotação -->
+          <td class="td-number td-valor-atual">
+            <span *ngIf="row.isLoading">
+              <span class="spinner-border spinner-border-sm" role="status"></span>
+            </span>
+            <span *ngIf="!row.isLoading && row.valorAtual !== null">
+              {{ row.valorAtual | number:'1.2-2':'pt-PT' }}
+            </span>
+          </td>
+
+          <!--
+            ── VARIAÇÃO COM COR CONDICIONAL ────────────────────────
+            [ngClass] aplica a classe CSS de acordo com o valor calculado.
+            getVariacaoClass() retorna: 'variacao-positive', 'variacao-negative'
+            ou 'variacao-neutral' conforme o valor de row.variacao.
+
+            Alternativa com [ngStyle]:
+            [ngStyle]="{
+              'color': row.variacao > 0 ? 'green' : row.variacao < 0 ? 'red' : 'black'
+            }"
+          -->
+          <td class="td-number td-variacao">
+            <span *ngIf="row.isLoading">
+              <span class="spinner-border spinner-border-sm" role="status"></span>
+            </span>
+            <span
+              *ngIf="!row.isLoading && !row.hasError"
+              [ngClass]="getVariacaoClass(row.variacao)"
+              class="variacao-badge">
+              <!-- Ícone de seta (▲ / ▼ / ●) -->
+              {{ getVariacaoIcon(row.variacao) }}
+              {{ formatarVariacao(row.variacao) }}
+            </span>
+            <span *ngIf="row.hasError && !row.isLoading" class="text-muted">—</span>
+          </td>
+
+        </tr>
+      </tbody>
+
+      <!-- RODAPÉ DA TABELA — Linha de TOTAIS -->
+      <tfoot *ngIf="totals">
+        <tr class="totals-row" style="background: #161b22 !important;"></tr>
+        <tr class="totals-row">
+          <td colspan="2" class="totals-label">
+            <strong>TOTAL CARTEIRA</strong>
+          </td>
+          <!-- Células vazias para alinhar com as colunas -->
+          <td></td>
+          <td></td>
+          <td></td>
+          <!-- Total de Aquisição Global -->
+          <td class="td-number totals-value">
+            <strong>{{ totals.totalAquisicao | number:'1.2-2':'pt-PT' }} €</strong>
+          </td>
+          <!-- Célula da cotação (vazia no total) -->
+          <td></td>
+          <!-- Valor Atual Global -->
+          <td class="td-number totals-value">
+            <strong>{{ totals.valorAtual | number:'1.2-2':'pt-PT' }} €</strong>
+          </td>
+          <!-- Variação Global com cor condicional -->
+          <td class="td-number totals-value">
+            <span
+              [ngClass]="getVariacaoClass(totals.variacaoGlobal)"
+              class="variacao-badge variacao-badge-lg">
+              <strong>
+                {{ getVariacaoIcon(totals.variacaoGlobal) }}
+                {{ formatarVariacao(totals.variacaoGlobal) }}
+              </strong>
+            </span>
+          </td>
+        </tr>
+      </tfoot>
+
+    </table>
+  </div><!-- /table-responsive -->
+
+  <!-- ── PAINEL DE RESUMO (Cards) ───────────────────────────── -->
+  <div class="summary-cards" *ngIf="totals && !isLoading">
+    <div class="summary-card">
+      <div class="card-label">Investido Total</div>
+      <div class="card-value">{{ totals.totalAquisicao | number:'1.2-2':'pt-PT' }} €</div>
+    </div>
+    <div class="summary-card">
+      <div class="card-label">Valor Atual</div>
+      <div class="card-value">{{ totals.valorAtual | number:'1.2-2':'pt-PT' }} €</div>
+    </div>
+    <div class="summary-card" [ngClass]="getVariacaoClass(totals.variacaoGlobal)">
+      <div class="card-label">Retorno Global</div>
+      <div class="card-value card-value-variacao">
+        {{ getVariacaoIcon(totals.variacaoGlobal) }}
+        {{ formatarVariacao(totals.variacaoGlobal) }}
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="card-label">Mais/Menos Valias</div>
+      <div class="card-value"
+           [ngClass]="getVariacaoClass(totals.variacaoGlobal)">
+        {{ (totals.valorAtual - totals.totalAquisicao) | number:'1.2-2':'pt-PT' }} €
+      </div>
+    </div>
+  </div>
+
+  <!-- ── NOTA DE ATUALIZAÇÃO AUTOMÁTICA ─────────────────────── -->
+  <div class="auto-update-note" *ngIf="!isLoading">
+    <span>⏱️ Cotações atualizadas automaticamente a cada 60 segundos</span>
+  </div>
+
+</div><!-- /portfolio-wrapper -->
